@@ -22,6 +22,7 @@ from tws_name_changer.bluetooth.discovery import (
     _ble_adapter_message,
     _classic_adapter_message,
     _clean_name,
+    _extract_address_from_id,
     merge_observations,
 )
 from tws_name_changer.bluetooth.device_info import display_name
@@ -462,3 +463,23 @@ def test_scan_result_status_summary_includes_counts_and_errors():
     summary = sr.status_summary()
     assert "1 device(s)" in summary
     assert "access denied" in summary
+
+# ---------------------------------------------------------------------------
+# _extract_address_from_id unit tests
+# ---------------------------------------------------------------------------
+
+def test_extract_address_from_id_valid():
+    # Typical WinRT device ID format with colon-separated address
+    good_id = "Bluetooth#Bluetooth64:49:7d:53:50:15-41:42:ff:85:aa:71"
+    expected = "4142FF85AA71"
+    assert _extract_address_from_id(good_id) == expected
+
+def test_extract_address_from_id_malformed_missing_dash():
+    # Missing dash separator should result in None
+    bad_id = "Bluetooth#Bluetooth64:49:7d:53:50:15_41:42:ff:85:aa:71"
+    assert _extract_address_from_id(bad_id) is None
+
+def test_extract_address_from_id_unexpected_format():
+    # Completely unrelated string should return None
+    weird = "Just-a-random-string"
+    assert _extract_address_from_id(weird) is None
