@@ -23,7 +23,15 @@ class BleakDiscoveryBackend:
         except ImportError as error:  # pragma: no cover - packaging failure
             raise RuntimeError("BLE discovery dependency is not installed") from error
 
-        discovered = await asyncio.wait_for(BleakScanner.discover(timeout=timeout_seconds, return_adv=True), timeout_seconds + 2)
+        try:
+            discovered = await asyncio.wait_for(
+                BleakScanner.discover(timeout=timeout_seconds, return_adv=True), timeout_seconds + 2
+            )
+        except OSError as error:
+            raise RuntimeError(
+                "Windows Bluetooth adapter is unavailable or not ready. Turn Bluetooth on, "
+                "check the adapter in Device Manager, then scan again."
+            ) from error
         now = datetime.now(timezone.utc)
         observations: list[DeviceObservation] = []
         for address, (device, advertisement) in discovered.items():

@@ -3,6 +3,10 @@
 **Date:** 2026-10-18  
 **Evidence:** `pytest -q`: **10 passed**; offscreen PySide6 window launch: **passed**. Neither test accesses Bluetooth hardware.
 
+## Windows hardware attempt
+
+On 2026-10-18, a 5-second read-only scan reached Bleak's Windows watcher but failed before receiving observations with: `OSError: [WinError -2147020577] The device is not ready for use`. This does not demonstrate discovery success or failure for any earbuds. The application now translates this class of adapter error into an actionable recovery message.
+
 | ID | Severity | File | Finding | Required follow-up |
 |---|---|---|---|---|
 | M2-001 | High | `bluetooth/discovery.py` | `BleakDiscoveryBackend` only receives BLE advertisements; it does not discover Classic BR/EDR TWS devices. | Keep UI/docs BLE-specific. Add a distinct Windows Classic/paired backend only after physical Windows testing. |
