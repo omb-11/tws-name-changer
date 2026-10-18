@@ -2,24 +2,29 @@
 from __future__ import annotations
 import asyncio
 from PySide6.QtCore import QThread, Signal
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
+    QMainWindow, QPushButton, QVBoxLayout, QWidget,
+)
 from ..bluetooth.base import DeviceObservation
 from ..bluetooth.device_info import capability_summary, display_name
-from ..bluetooth.discovery import DiscoveryBackend
+from ..bluetooth.discovery import DiscoveryBackend, ScanResult, _AnnotatedList
 from ..services.rename_service import RenameService
 
 
 class ScanThread(QThread):
     finished_scan = Signal(object)
     failed = Signal(str)
+
     def __init__(self, backend: DiscoveryBackend) -> None:
         super().__init__()
         self.backend = backend
+
     def run(self) -> None:
         try:
             self.finished_scan.emit(asyncio.run(self.backend.scan(8.0)))
         except Exception as error:
-            self.failed.emit(f"Scan could not start: {error}")
+            self.failed.emit(f"Scan failed: {error}")
 
 
 class MainWindow(QMainWindow):
@@ -30,7 +35,10 @@ class MainWindow(QMainWindow):
         self._thread: ScanThread | None = None
         self.setWindowTitle("TWS Name Changer")
         root, layout = QWidget(self), QVBoxLayout()
-        layout.addWidget(QLabel("Bluetooth devices (BLE advertisements and Windows paired records; names are not firmware-name proof):"))
+        layout.addWidget(QLabel(
+            "Bluetooth devices (BLE advertisements and Windows paired records; "
+            "names are not firmware-name proof):"
+        ))
         self.device_list = QListWidget()
         layout.addWidget(self.device_list)
         controls = QHBoxLayout()
@@ -51,23 +59,42 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(root)
 
     def start_scan(self) -> None:
-        if self._thread and self._thread.isRunning(): return
+        if self._thread and self._thread.isRunning():
+            return
         self.scan_button.setEnabled(False)
         self.status.setText("Scanning…")
         self._thread = ScanThread(self._backend)
         self._thread.finished_scan.connect(self._show_devices)
-        self._thread.failed.connect(self.status.setText)
+        self._thread.failed.connect(self._show_scan_error)
         self._thread.finished.connect(lambda: self.scan_button.setEnabled(True))
         self._thread.start()
 
     def _show_devices(self, devices: list[DeviceObservation]) -> None:
-        self._devices = devices
+        self._devices = list(devices)
         self.device_list.clear()
         for device in devices:
             item = QListWidgetItem(f"{display_name(device)} — {capability_summary(device)}")
             item.setData(256, device.key)
             self.device_list.addItem(item)
-        self.status.setText(f"Found {len(devices)} Bluetooth observation(s). Select one to check support.")
+
+        # Surface partial-failure details when the backend provides a ScanResult.
+        count = len(self._devices)
+        if isinstance(devices, _AnnotatedList) and devices.scan_result is not None:
+            scan_result: ScanResult = devices.scan_result
+            summary = scan_result.status_summary()
+            if scan_result.all_failed:
+                self.status.setText(f"No devices found — all sources failed.\n{summary}")
+            elif any(not r.succeeded for r in scan_result.source_results):
+                self.status.setText(
+                    f"Found {count} Bluetooth observation(s) (partial — some sources failed).\n{summary}"
+                )
+            else:
+                self.status.setText(f"Found {count} Bluetooth observation(s).\n{summary}")
+        else:
+            self.status.setText(f"Found {count} Bluetooth observation(s). Select one to check support.")
+
+    def _show_scan_error(self, message: str) -> None:
+        self.status.setText(message)
 
     def request_rename(self) -> None:
         item = self.device_list.currentItem()

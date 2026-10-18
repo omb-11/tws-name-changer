@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Protocol
 
@@ -14,6 +15,43 @@ class DiscoveryBackend(Protocol):
 
 class DiscoveryError(RuntimeError):
     """A source-specific discovery failure suitable for display to the user."""
+
+
+@dataclass(frozen=True)
+class SourceResult:
+    """Outcome of scanning a single source, carrying both observations and any error."""
+    source_name: str
+    observations: list[DeviceObservation] = field(default_factory=list)
+    error: str | None = None
+
+    @property
+    def succeeded(self) -> bool:
+        return self.error is None
+
+
+@dataclass(frozen=True)
+class ScanResult:
+    """Combined result of all discovery sources, including partial-failure details."""
+    devices: list[DeviceObservation]
+    source_results: list[SourceResult]
+
+    @property
+    def any_succeeded(self) -> bool:
+        return any(r.succeeded for r in self.source_results)
+
+    @property
+    def all_failed(self) -> bool:
+        return all(not r.succeeded for r in self.source_results)
+
+    def status_summary(self) -> str:
+        """Human-readable summary of which sources succeeded or failed."""
+        parts: list[str] = []
+        for r in self.source_results:
+            if r.succeeded:
+                parts.append(f"{r.source_name}: {len(r.observations)} device(s) found")
+            else:
+                parts.append(f"{r.source_name}: failed — {r.error}")
+        return "\n".join(parts)
 
 
 class BleakDiscoveryBackend:
@@ -62,12 +100,8 @@ class WindowsPairedClassicBackend:
         try:
             selector = BluetoothDevice.get_device_selector()
             records = await asyncio.wait_for(DeviceInformation.find_all_async_aqs_filter(selector), timeout_seconds)
-        except PermissionError as error:
-            raise DiscoveryError(
-                "Windows denied paired Bluetooth-device access. Check Bluetooth and app privacy permissions, then scan again."
-            ) from error
-        except OSError as error:
-            raise DiscoveryError("Windows paired Bluetooth enumeration is unavailable. Check the Bluetooth adapter.") from error
+        except (PermissionError, OSError) as error:
+            raise DiscoveryError(_classic_adapter_message(error)) from error
         now = datetime.now(timezone.utc)
         observations: list[DeviceObservation] = []
         for record in records:
@@ -98,17 +132,62 @@ async def _classic_address(bluetooth_device: object, device_id: str) -> str | No
 
 
 class UnifiedDiscoveryBackend:
-    """Collect independent BLE and paired-Classic sources without hiding failures."""
+    """Collect independent BLE and paired-Classic sources without hiding failures.
+
+    Both sources are always attempted concurrently. A failure in one source does
+    not suppress results from the other. When all sources fail, a ``DiscoveryError``
+    is raised. When at least one source yields results, a ``ScanResult`` is returned
+    that contains the devices *and* a ``SourceResult`` per backend so callers can
+    surface partial-failure details to the user.
+    """
+
     def __init__(self, ble: DiscoveryBackend, classic: DiscoveryBackend) -> None:
         self._ble, self._classic = ble, classic
 
     async def scan(self, timeout_seconds: float) -> list[DeviceObservation]:
-        results = await asyncio.gather(self._ble.scan(timeout_seconds), self._classic.scan(timeout_seconds), return_exceptions=True)
-        observations = [item for result in results if isinstance(result, list) for item in result]
-        failures = [result for result in results if isinstance(result, Exception)]
+        """Run both sources and return merged observations.
+
+        Raises ``DiscoveryError`` only when *every* source fails so that any
+        successfully discovered device is always visible. Partial failures are
+        embedded in the returned ``ScanResult`` for the caller to display.
+        """
+        raw = await asyncio.gather(
+            self._ble.scan(timeout_seconds),
+            self._classic.scan(timeout_seconds),
+            return_exceptions=True,
+        )
+        source_results = [
+            _to_source_result("BLE", raw[0]),
+            _to_source_result("Windows paired Classic", raw[1]),
+        ]
+        observations = [item for r in source_results for item in r.observations]
+        failures = [r for r in source_results if not r.succeeded]
+
         if not observations and failures:
-            raise DiscoveryError("; ".join(str(error) for error in failures))
-        return merge_observations(observations)
+            combined = "; ".join(r.error for r in failures if r.error)  # type: ignore[misc]
+            raise DiscoveryError(combined)
+
+        scan_result = ScanResult(devices=merge_observations(observations), source_results=source_results)
+        # Attach the rich result to the list so the UI can retrieve it via
+        # the ``scan_result`` attribute on the returned list object.
+        device_list = scan_result.devices
+        device_list = _AnnotatedList(device_list, scan_result)
+        return device_list  # type: ignore[return-value]
+
+
+class _AnnotatedList(list):  # type: ignore[type-arg]
+    """A plain list that also carries a ``scan_result`` attribute for the UI."""
+
+    def __init__(self, items: list[DeviceObservation], scan_result: ScanResult) -> None:
+        super().__init__(items)
+        self.scan_result: ScanResult = scan_result
+
+
+def _to_source_result(name: str, raw: object) -> SourceResult:
+    if isinstance(raw, list):
+        return SourceResult(source_name=name, observations=raw)
+    error_msg = str(raw) if raw else "Unknown error"
+    return SourceResult(source_name=name, error=error_msg)
 
 
 def merge_observations(observations: list[DeviceObservation]) -> list[DeviceObservation]:
@@ -123,12 +202,44 @@ def merge_observations(observations: list[DeviceObservation]) -> list[DeviceObse
 
 
 def _ble_adapter_message(error: OSError) -> str:
-    if getattr(error, "winerror", None) == -2147020577:
+    winerror = getattr(error, "winerror", None)
+    if winerror == -2147020577:
         return (
-            "Windows reports ERROR_DEVICE_NOT_AVAILABLE (0x800710DF): Bluetooth may be turned off or the "
-            "adapter is unavailable. Turn Bluetooth on and check the adapter in Device Manager."
+            "BLE scan failed — Windows reports ERROR_DEVICE_NOT_AVAILABLE (0x800710DF). "
+            "Possible causes and fixes:\n"
+            "  1. Bluetooth is turned off — open Windows Settings > Bluetooth & devices and turn it on.\n"
+            "  2. The Bluetooth adapter driver has an error — open Device Manager, find the Bluetooth "
+            "adapter, and reinstall or update its driver.\n"
+            "  3. A system service is not running — open Services and ensure 'Bluetooth Support Service' "
+            "is set to Automatic and is running.\n"
+            "After making changes, scan again."
         )
-    return "Windows Bluetooth adapter is unavailable or not ready. Turn Bluetooth on, check the adapter in Device Manager, then scan again."
+    return (
+        "BLE scan failed — the Windows Bluetooth adapter is unavailable or not ready. "
+        "Turn Bluetooth on, check the adapter in Device Manager, then scan again."
+    )
+
+
+def _classic_adapter_message(error: OSError | PermissionError) -> str:
+    winerror = getattr(error, "winerror", None)
+    # 0x80070005 == -2147024891 == E_ACCESSDENIED; may surface as OSError or PermissionError.
+    if winerror == -2147024891 or isinstance(error, PermissionError):
+        return (
+            "Windows paired-device scan failed — access denied (0x80070005). "
+            "Possible causes and fixes:\n"
+            "  1. Bluetooth app privacy is off — open Windows Settings > Privacy & security > "
+            "Bluetooth, and enable 'Let apps access Bluetooth'.\n"
+            "  2. Bluetooth is turned off or the adapter is not ready — open Settings > "
+            "Bluetooth & devices and check the adapter.\n"
+            "  3. The Windows Bluetooth service is stopped — open Services and ensure "
+            "'Bluetooth Support Service' is running.\n"
+            "After making changes, scan again. Administrator privileges are not required for "
+            "normal paired-device enumeration."
+        )
+    return (
+        "Windows paired-device scan failed — the Bluetooth adapter is unavailable. "
+        "Turn Bluetooth on, check the adapter in Device Manager, then scan again."
+    )
 
 
 def _clean_name(value: str | None) -> str | None:
@@ -136,4 +247,3 @@ def _clean_name(value: str | None) -> str | None:
         return None
     cleaned = "".join(char for char in value if char.isprintable()).strip()
     return cleaned[:248] or None
-
