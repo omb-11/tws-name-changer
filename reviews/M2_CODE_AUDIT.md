@@ -5,7 +5,7 @@
 
 ## Windows hardware attempt
 
-On 2026-10-18, a 5-second read-only BLE scan reached Bleak's Windows watcher but failed before receiving observations with: `OSError: [WinError -2147020577] The device is not ready for use`. A supported WinRT paired-Bluetooth enumeration then failed with: `PermissionError: [WinError -2147024891] Access is denied.` Neither result demonstrates discovery success or failure for any earbuds. The application now translates these conditions into distinct adapter-readiness and permission recovery messages.
+On 2026-10-18, a 5-second read-only BLE scan reached Bleak's Windows watcher but failed before receiving observations with: `OSError: [WinError -2147020577] The device is not ready for use`. This is `0x800710DF` / `ERROR_DEVICE_NOT_AVAILABLE`; published BLE tooling associates it with Bluetooth being turned off, so the UI now identifies that code and directs the user to enable Bluetooth/check Device Manager. [Renesas GATTBrowser error table](https://www.renesas.com/en/document/apn/gattbrowser-windows-windows-application-instruction-manual) A supported WinRT paired-Bluetooth enumeration then failed with: `PermissionError: [WinError -2147024891] Access is denied.` Neither result demonstrates discovery success or failure for any earbuds. The application now translates these conditions into distinct adapter-readiness and permission recovery messages.
 
 | ID | Severity | File | Finding | Required follow-up |
 |---|---|---|---|---|

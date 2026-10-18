@@ -4,7 +4,7 @@ from datetime import timedelta
 from types import SimpleNamespace
 import pytest
 from tws_name_changer.bluetooth.base import DiscoverySource, DeviceObservation, Transport
-from tws_name_changer.bluetooth.discovery import BleakDiscoveryBackend, DiscoveryError, UnifiedDiscoveryBackend, WindowsPairedClassicBackend, _clean_name, merge_observations
+from tws_name_changer.bluetooth.discovery import BleakDiscoveryBackend, DiscoveryError, UnifiedDiscoveryBackend, WindowsPairedClassicBackend, _ble_adapter_message, _clean_name, merge_observations
 from tws_name_changer.bluetooth.device_info import display_name
 
 def test_clean_name_removes_control_characters():
@@ -51,6 +51,12 @@ def test_ble_adapter_os_error_becomes_actionable(monkeypatch):
     monkeypatch.setitem(sys.modules, "bleak", SimpleNamespace(BleakScanner=Scanner))
     with pytest.raises(DiscoveryError, match="adapter is unavailable or not ready"):
         asyncio.run(BleakDiscoveryBackend().scan(1))
+
+
+def test_known_windows_ble_hresult_has_specific_diagnosis():
+    error = OSError("device not ready")
+    error.winerror = -2147020577
+    assert "0x800710DF" in _ble_adapter_message(error)
 
 
 def test_windows_paired_backend_labels_mocked_classic_record():

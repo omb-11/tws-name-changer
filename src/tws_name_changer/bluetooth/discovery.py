@@ -32,10 +32,7 @@ class BleakDiscoveryBackend:
                 BleakScanner.discover(timeout=timeout_seconds, return_adv=True), timeout_seconds + 2
             )
         except OSError as error:
-            raise DiscoveryError(
-                "Windows Bluetooth adapter is unavailable or not ready. Turn Bluetooth on, "
-                "check the adapter in Device Manager, then scan again."
-            ) from error
+            raise DiscoveryError(_ble_adapter_message(error)) from error
         now = datetime.now(timezone.utc)
         observations: list[DeviceObservation] = []
         for address, (device, advertisement) in discovered.items():
@@ -123,6 +120,15 @@ def merge_observations(observations: list[DeviceObservation]) -> list[DeviceObse
         if previous is None or device.seen_at > previous.seen_at:
             merged[identity] = device
     return sorted(merged.values(), key=lambda item: (item.name or "", item.key))
+
+
+def _ble_adapter_message(error: OSError) -> str:
+    if getattr(error, "winerror", None) == -2147020577:
+        return (
+            "Windows reports ERROR_DEVICE_NOT_AVAILABLE (0x800710DF): Bluetooth may be turned off or the "
+            "adapter is unavailable. Turn Bluetooth on and check the adapter in Device Manager."
+        )
+    return "Windows Bluetooth adapter is unavailable or not ready. Turn Bluetooth on, check the adapter in Device Manager, then scan again."
 
 
 def _clean_name(value: str | None) -> str | None:
