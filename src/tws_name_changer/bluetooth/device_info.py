@@ -7,7 +7,7 @@ def display_name(device: DeviceObservation) -> str:
 
 
 def capability_summary(device: DeviceObservation) -> str:
-    parts = [device.transport.value]
+    parts = [device.source.value, device.transport.value]
     if device.service_uuids:
         parts.append(f"{len(device.service_uuids)} advertised service(s)")
     if device.rssi_dbm is not None:

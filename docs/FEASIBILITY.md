@@ -8,7 +8,7 @@ BLE advertising can include a shortened or complete local name. Separately, the 
 
 ## Discovery transport limitation
 
-The implemented `BleakDiscoveryBackend` performs BLE advertisement discovery only. Many earbuds use a BLE control channel in addition to Classic audio, while others are discoverable only through Classic Bluetooth. Therefore an absent device in the application is not proof that it is absent, unpaired, or incompatible. Windows paired-device/Classic enumeration needs a separate, hardware-tested Windows API backend; it must label cached paired records separately from live radio discovery.
+`BleakDiscoveryBackend` performs live BLE advertisement discovery only. `WindowsPairedClassicBackend` uses the supported `Windows.Devices.Bluetooth.BluetoothDevice` selector with `Windows.Devices.Enumeration.DeviceInformation` to enumerate paired Bluetooth records. It is **not** a live BR/EDR inquiry. Many earbuds use a BLE control channel in addition to Classic audio, while others are discoverable only through Classic Bluetooth. An absent device is not proof that it is absent, unpaired, or incompatible. The UI labels source and transport separately, and never treats a paired record as live advertising.
 
 ## Provider admission requirements
 

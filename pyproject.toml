@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "tws-name-changer"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["PySide6==6.8.1", "bleak==0.22.3"]
+dependencies = ["PySide6==6.8.1", "bleak==0.22.3", "winrt-Windows.Foundation==3.2.1", "winrt-Windows.Devices.Bluetooth==3.2.1", "winrt-Windows.Devices.Enumeration==3.2.1"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

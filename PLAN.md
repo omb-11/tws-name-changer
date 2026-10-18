@@ -10,7 +10,7 @@ The workspace contained no Antigravity production files and no Git repository wh
 |---|---|---|
 | M0 feasibility and plan | Complete | Evidence and limitations documented. |
 | M1 GUI and mocked workflow | In progress | GUI launches and reports simulated/unsupported states honestly. |
-| M2 BLE discovery | In progress | Nearby BLE observations are shown through a replaceable backend. |
+| M2 Bluetooth discovery | In progress | BLE advertisements and separately labelled Windows paired Bluetooth records are shown through replaceable backends and validated on usable hardware. |
 | M3 firmware provider | Blocked | Exact model/firmware and a verified safe method exist. |
 | M4 integration/tests | In progress | Automated tests cover supported safe paths and unsupported behavior. |
 | M5 packaging | Planned | Reproducible PyInstaller build tested on Windows 11. |

@@ -4,7 +4,7 @@ Windows 11 desktop diagnostics for Bluetooth earbuds. It discovers nearby BLE de
 
 ## Bluetooth transport limitation
 
-The current scan is BLE-only. Some TWS products expose audio and discoverability through Bluetooth Classic (BR/EDR), which Bleak does not actively discover. Such devices can be absent from this list even when visible in Windows Bluetooth Settings. This is an honest limitation, not an indication that the earbuds are unsupported for all future diagnostics. A separately tested Windows Classic/paired-device backend is required before claiming Classic discovery support.
+BLE advertising and Windows paired Bluetooth records are collected independently. Bleak does not actively discover Classic BR/EDR devices; the Windows backend only enumerates existing paired records and can be denied by system privacy policy. Thus a Classic-only unpaired device can be absent from the list even when visible in Windows Bluetooth Settings. Paired records are cached system metadata, not proof that a device is currently nearby or advertising.
 
 ## Status
 

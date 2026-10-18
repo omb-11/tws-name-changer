@@ -13,6 +13,11 @@ class Transport(str, Enum):
     PAIRED = "Paired record"
 
 
+class DiscoverySource(str, Enum):
+    BLE_ADVERTISEMENT = "BLE advertisement"
+    WINDOWS_PAIRED_CLASSIC = "Windows paired Bluetooth"
+
+
 class RenameStatus(str, Enum):
     NOT_SUPPORTED = "not_supported"
     INVALID_NAME = "invalid_name"
@@ -30,6 +35,7 @@ class DeviceObservation:
     transport: Transport
     rssi_dbm: int | None
     seen_at: datetime
+    source: DiscoverySource = DiscoverySource.BLE_ADVERTISEMENT
     service_uuids: tuple[str, ...] = ()
     manufacturer_ids: tuple[int, ...] = ()
     paired: bool | None = None

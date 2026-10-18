@@ -30,7 +30,7 @@ class MainWindow(QMainWindow):
         self._thread: ScanThread | None = None
         self.setWindowTitle("TWS Name Changer")
         root, layout = QWidget(self), QVBoxLayout()
-        layout.addWidget(QLabel("Nearby BLE devices (observed names are not firmware-name proof):"))
+        layout.addWidget(QLabel("Bluetooth devices (BLE advertisements and Windows paired records; names are not firmware-name proof):"))
         self.device_list = QListWidget()
         layout.addWidget(self.device_list)
         controls = QHBoxLayout()
@@ -67,7 +67,7 @@ class MainWindow(QMainWindow):
             item = QListWidgetItem(f"{display_name(device)} — {capability_summary(device)}")
             item.setData(256, device.key)
             self.device_list.addItem(item)
-        self.status.setText(f"Found {len(devices)} BLE observation(s). Select one to check support.")
+        self.status.setText(f"Found {len(devices)} Bluetooth observation(s). Select one to check support.")
 
     def request_rename(self) -> None:
         item = self.device_list.currentItem()
