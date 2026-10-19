@@ -2,10 +2,11 @@
 
 | ID | Owner | Status | Dependency | Review |
 |---|---|---|---|---|
-| T1 | Codex bootstrap (user-authorised) | Complete | Empty workspace | Pending Antigravity handoff |
-| T2 | Antigravity | Complete | T1 | 45 tests pass; offscreen GUI smoke pass; M2 correctness pass done — see `reviews/M2_CORRECTNESS_PASS.md`; real hardware pending |
-| T3 | Codex | Complete | M0 | Reports in `reviews/` |
-| T4 | Antigravity | Blocked | Exact earbuds model, firmware, documented rename method | No provider may be added without evidence |
-| T5 | Antigravity | Blocked | Usable Windows Bluetooth adapter and physical device | BLE watcher failed `0x800710DF` (Bluetooth off); paired-record query failed `0x80070005` (Privacy settings). Both produce actionable messages now. |
-| T7 | Antigravity | Complete | Usable Windows Bluetooth permissions and paired Classic device | `WindowsPairedClassicBackend` now catches `OSError` with winerror `-2147024891`; partial-failure surfaces in UI via `ScanResult`/`SourceResult` |
-| T6 | Codex | Planned | T2/T5 | Full final audit |
+| T1 | Codex bootstrap (user-authorised) | Complete | Empty workspace | Initial project structure and protocols |
+| T2 | Antigravity | Complete | T1 | Discovery and GUI implementation |
+| T3 | Codex | Complete | M0 | Feasibility and architecture reports in `reviews/` |
+| T4 | Antigravity | Blocked | Exact earbuds model, firmware, documented rename method | Firmware renaming honestly reported as unsupported |
+| T5 | Antigravity | Complete | Intel Bluetooth adapter | Real hardware discovery validated: BLE (live nearby devices) and Windows Classic (2 cached pTron TWS records) |
+| T6 | Antigravity | Complete | T2/T5 | Full final QA audit in `reviews/FINAL_QA_AUDIT.md` |
+| T7 | Antigravity | Complete | Windows permissions & WinRT | Fixed WinRT collection index access, synchronous address parsing, partial failure reporting |
+| T8 | Antigravity | Complete | PyInstaller packaging | Fixed PySide6 packaging defect; built and verified standalone `dist/TWSNameChanger.exe` and `build.ps1` |
