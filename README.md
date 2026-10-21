@@ -1,6 +1,14 @@
 # TWS Name Changer
 
-Windows 11 desktop application and diagnostics for Bluetooth earbuds. It discovers nearby BLE advertisements and enumerates Windows paired Bluetooth records without claiming unverified firmware renaming capabilities.
+Windows 11 desktop application, diagnostic utility, and landing website for Bluetooth earbuds. It discovers nearby BLE advertisements and enumerates Windows paired Bluetooth records without claiming unverified firmware renaming capabilities.
+
+---
+
+## Downloads & Links
+
+- **Direct Executable Download:** [Download `TWSNameChanger.exe` (v1.0.0)](https://github.com/omb-11/tws-name-changer/releases/latest/download/TWSNameChanger.exe)
+- **GitHub Release Page:** [Release v1.0.0](https://github.com/omb-11/tws-name-changer/releases/tag/v1.0.0)
+- **Landing Website Source:** [`website/`](file:///c:/Users/butem/Desktop/tws-name-changer/website) (Built with Vite + React + TypeScript)
 
 ---
 
@@ -42,6 +50,13 @@ python -m venv .venv
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
+### Running the Website
+```powershell
+cd website
+npm install
+npm run dev
+```
+
 ---
 
 ## Bluetooth Transport Limitations
@@ -50,6 +65,6 @@ BLE advertising and Windows paired Bluetooth records are collected independently
 
 ---
 
-## Safety
+## Safety & License
 
-Use only with devices you own or are authorised to administer. The app does not pair, unpair, flash firmware, or send undocumented commands.
+Distributed under the [MIT License](file:///c:/Users/butem/Desktop/tws-name-changer/LICENSE). Use only with devices you own or are authorised to administer. The app does not pair, unpair, flash firmware, or send undocumented commands.
