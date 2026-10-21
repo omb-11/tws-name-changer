@@ -4,7 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tws-name-changer"
-version = "0.1.0"
+version = "1.0.0"
+description = "Windows 11 Bluetooth Diagnostics & Rename Support for TWS Earbuds"
+license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = ["PySide6==6.8.1", "bleak==0.22.3", "winrt-Windows.Foundation==3.2.1", "winrt-Windows.Devices.Bluetooth==3.2.1", "winrt-Windows.Devices.Enumeration==3.2.1"]
 

@@ -6,3 +6,6 @@ build/
 dist/
 *.log
 scratch_diag.py
+node_modules/
+website/dist/
+.vercel/
