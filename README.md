@@ -6,6 +6,7 @@ Windows 11 desktop application, diagnostic utility, and landing website for Blue
 
 ## Downloads & Links
 
+- **Live Download Website:** [https://website-gamma-flax-47.vercel.app](https://website-gamma-flax-47.vercel.app)
 - **Direct Executable Download:** [Download `TWSNameChanger.exe` (v1.0.0)](https://github.com/omb-11/tws-name-changer/releases/latest/download/TWSNameChanger.exe)
 - **GitHub Release Page:** [Release v1.0.0](https://github.com/omb-11/tws-name-changer/releases/tag/v1.0.0)
 - **Landing Website Source:** [`website/`](file:///c:/Users/butem/Desktop/tws-name-changer/website) (Built with Vite + React + TypeScript)

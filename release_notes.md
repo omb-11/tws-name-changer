@@ -19,6 +19,9 @@
 
 ## 📦 Assets & Verification
 
+- **Live Download Website:** [https://website-gamma-flax-47.vercel.app](https://website-gamma-flax-47.vercel.app)
+- **GitHub Release Page:** [https://github.com/omb-11/tws-name-changer/releases/tag/v1.0.0](https://github.com/omb-11/tws-name-changer/releases/tag/v1.0.0)
+
 | Asset | Description | Size |
 |---|---|---|
 | **`TWSNameChanger.exe`** | Standalone Portable Windows 64-bit GUI Executable | ~202 MB (211,768,830 bytes) |
